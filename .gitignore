@@ -1,6 +1,7 @@
 *~
 plan/
 /target
+/jniLibs
 /dist
 /corpus
 /log

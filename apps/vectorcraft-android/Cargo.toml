@@ -1,0 +1,30 @@
+[package]
+name = "vectorcraft-android"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+crate-type = ["cdylib"]
+path = "src/lib.rs"
+
+[dependencies]
+vectorcraft-ui-egui = { workspace = true }
+vectorcraft-engine = { workspace = true }
+vectorcraft-doc = { workspace = true }
+vectorcraft-geom = { workspace = true }
+eframe = { workspace = true, default-features = false, features = ["wgpu", "android-native-activity"] }
+egui = { workspace = true }
+android-activity = { version = "0.6", features = ["native-activity"] }
+log = { workspace = true }
+android_logger = "0.14"
+jni = "0.21"
+
+[package.metadata.android]
+package = "ai.storyteller.vectorcraft"
+apk_name = "VectorCraft"
+app_name = "VectorCraft"
+label = "VectorCraft"
+target_sdk_version = 34
+min_sdk_version = 26
+build_targets = ["aarch64-linux-android"]
