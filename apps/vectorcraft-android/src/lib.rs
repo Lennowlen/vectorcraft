@@ -1,7 +1,51 @@
 use android_activity::AndroidApp;
+use std::path::{Path, PathBuf};
 use vectorcraft_engine::Session;
-use vectorcraft_ui_egui::{Services, VectorcraftApp};
+use vectorcraft_ui_egui::{FilePick, Services, VectorcraftApp};
 use jni::objects::JValue;
+
+const WORKSPACE_DIR: &str = "/sdcard/Download/ArtCraft";
+
+fn ensure_workspace_dir() -> PathBuf {
+    let p = PathBuf::from(WORKSPACE_DIR);
+    let _ = std::fs::create_dir_all(&p);
+    p
+}
+
+fn create_android_services() -> Services {
+    Services {
+        pick_open: Some(Box::new(|_pick: &FilePick| {
+            let base_dir = ensure_workspace_dir();
+            let mut candidates = Vec::new();
+            if let Ok(entries) = std::fs::read_dir(&base_dir) {
+                for entry in entries.flatten() {
+                    let path = entry.path();
+                    let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("").to_ascii_lowercase();
+                    if path.is_file() && (ext == "svg" || ext == "svgz" || ext == "png" || ext == "jpg" || ext == "jpeg" || ext == "pdf") {
+                        candidates.push(path.to_string_lossy().into_owned());
+                    }
+                }
+            }
+            candidates.sort();
+            candidates.first().cloned()
+        })),
+        pick_save: Some(Box::new(|pick: &FilePick| {
+            let base_dir = ensure_workspace_dir();
+            let name = if pick.name.is_empty() { "vector-artwork.svg" } else { &pick.name };
+            let path = Path::new(name);
+            let file_name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| name.to_string());
+            let mut target = base_dir.join(file_name);
+            if target.extension().is_none() {
+                target.set_extension("svg");
+            }
+            Some(target.to_string_lossy().into_owned())
+        })),
+        read: Some(Box::new(|path: &str| std::fs::read(path).map_err(|e| e.to_string()))),
+        write: Some(Box::new(|path: &str, bytes: &[u8]| std::fs::write(path, bytes).map_err(|e| e.to_string()))),
+        write_shared: Some(std::sync::Arc::new(|path: &str, bytes: &[u8]| std::fs::write(path, bytes).map_err(|e| e.to_string()))),
+        ..Default::default()
+    }
+}
 
 fn apply_immersive_sticky(app: &AndroidApp) {
     let vm_ptr = app.vm_as_ptr();
@@ -81,7 +125,7 @@ fn android_main(app: AndroidApp) {
         options,
         Box::new(|_cc| {
             let session = Session::new();
-            let services = Services::default();
+            let services = create_android_services();
             let vector_app = VectorcraftApp::new(session, services);
             Ok(Box::new(VectorcraftAndroidApp { app: vector_app }))
         }),
