@@ -46,7 +46,7 @@ pub fn app_bar(app: &mut VectorcraftApp, ui: &mut Ui) {
             }
             let on_home = menus::home_showing(app);
             if widgets::icon_button(ui, "house", tl!("Home"), on_home, 20.0).clicked() {
-                app.run("app.home", json!({})).ok();
+                app.open_url("app://launcher");
             }
             ui.add_space(2.0);
             // With the macOS menu bar the menus are at the top of the screen instead.
